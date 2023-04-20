@@ -96,12 +96,28 @@ app.post("/nova-transacao/:tipo", async (req, res) => {
     try {
         const sessao = await db.collection("sessoes").findOne({ token });
         if (!sessao) return res.sendStatus(401);
-        await db.collection("transacoes").insertOne({ valor, descricao, tipo, idUsuario: sessao.userId });
+        const dataHora = new Date().toLocaleString('pt-BR');
+        await db.collection("transacoes").insertOne({ valor, descricao, tipo, idUsuario: sessao.userId, dataHora });
         res.sendStatus(200);
     } catch (err) {
         return res.status(500).send(err.message);
     }
+})
 
+app.get("/transacoes", async (req, res) => {
+    const { authorization } = req.headers;
+    const token = authorization?.replace("Bearer ", "");
+
+    if (!token) return res.sendStatus(401);
+
+    try {
+        const sessao = await db.collection("sessoes").findOne({ token });
+        if (!sessao) return res.sendStatus(401);
+        const transacoes = await db.collection("transacoes").find({ idUsuario: sessao.userId }).toArray();
+        res.send(transacoes.reverse());
+    } catch (err) {
+        return res.status(500).send(err.message);
+    }
 })
 
 // Deixa o app escutando, à espera de requisições
