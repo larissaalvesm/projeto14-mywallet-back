@@ -33,6 +33,12 @@ const userLoginSchema = joi.object({
     senha: joi.string().required()
 })
 
+const transacaoSchema = joi.object({
+    tipo: joi.string().valid("entrada", "saida").required(),
+    valor: joi.number().positive().required(),
+    descricao: joi.string().required()
+})
+
 // Endpoints
 app.post("/cadastro", async (req, res) => {
     const { nome, email, senha } = req.body;
@@ -70,6 +76,32 @@ app.post("/", async (req, res) => {
     } catch (err) {
         return res.status(500).send(err.message);
     }
+})
+
+app.post("/nova-transacao/:tipo", async (req, res) => {
+    const { valor, descricao } = req.body;
+    const { tipo } = req.params;
+    const { authorization } = req.headers;
+    const token = authorization?.replace("Bearer ", "");
+
+    if (!token) return res.sendStatus(401);
+
+    const validation = transacaoSchema.validate({ valor, descricao, tipo }, { abortEarly: false });
+
+    if (validation.error) {
+        const errors = validation.error.details.map((detail) => detail.message);
+        return res.status(422).send(errors);
+    }
+
+    try {
+        const sessao = await db.collection("sessoes").findOne({ token });
+        if (!sessao) return res.sendStatus(401);
+        await db.collection("transacoes").insertOne({ valor, descricao, tipo, idUsuario: sessao.userId });
+        res.sendStatus(200);
+    } catch (err) {
+        return res.status(500).send(err.message);
+    }
+
 })
 
 // Deixa o app escutando, à espera de requisições
