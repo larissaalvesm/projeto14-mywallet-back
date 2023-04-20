@@ -72,7 +72,11 @@ app.post("/", async (req, res) => {
 
         const token = uuid();
         await db.collection("sessoes").insertOne({ userId: user._id, token });
-        res.send(token);
+        const infosUser = {
+            "token": token,
+            "user": user.nome
+        }
+        res.send(infosUser);
     } catch (err) {
         return res.status(500).send(err.message);
     }
