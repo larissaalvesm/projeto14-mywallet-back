@@ -17,8 +17,8 @@ export async function createTransaction(req, res) {
 export async function getTransactions(req, res) {
     try {
         const sessao = res.locals.sessao;
-        const transacoes = await db.collection("transacoes").find({ idUsuario: sessao.userId }).toArray();
-        res.send(transacoes.reverse());
+        const transacoes = await db.collection("transacoes").find({ idUsuario: sessao.userId }).sort({ dataHora: -1 }).toArray();
+        res.send(transacoes);
     } catch (err) {
         return res.status(500).send(err.message);
     }
